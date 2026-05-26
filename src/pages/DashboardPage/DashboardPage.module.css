@@ -57,21 +57,14 @@
   color: var(--color-error);
 }
 
-/* Lower section: QuickActions + Feed side by side */
 .lower {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-xl);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
   .welcome {
     margin-top: calc(-1 * var(--spacing-md));
-  }
-
-  .lower {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -99,40 +92,107 @@
 .feedList {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--spacing-md);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.feedList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.feedList::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
 }
 
 .feedItem {
   display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-default);
+}
+
+.feedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feedHeaderLeft {
+  display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: var(--font-size-sm);
 }
 
-.feedItem:last-child {
-  border-bottom: none;
-}
-
-.feedIcon {
-  font-size: 1rem;
-  width: 24px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.feedEvent {
-  flex: 1;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.feedTime {
-  color: var(--color-text-disabled);
+.feedDate {
   font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
   white-space: nowrap;
-  flex-shrink: 0;
+}
+
+.feedTradeId {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.feedColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 576px) {
+  .feedColumns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feedCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.feedColTitle {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.feedCardsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.feedCardMini {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-paper);
+}
+
+.feedCardMiniImg {
+  width: 48px;
+  height: 67px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
+.feedCardMiniName {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
 }

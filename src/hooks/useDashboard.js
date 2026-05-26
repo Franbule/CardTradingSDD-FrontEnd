@@ -17,15 +17,19 @@ function useDashboard(userId) {
     setLoading(true);
     setError(null);
     try {
-      const [profileData, tradesData, cardsData] = await Promise.all([
+      const [profileData, tradesData, cardsData, completedData, rejectedData, cancelledData] = await Promise.all([
         userService.getUserProfile(userId),
         tradeService.listTrades({ status: 'PENDING', size: 5, page: 0 }),
         cardService.getUserInventory(userId, { size: 4, page: 0 }),
+        tradeService.listTrades({ status: 'COMPLETED', size: 50, page: 0 }),
+        tradeService.listTrades({ status: 'REJECTED', size: 50, page: 0 }),
+        tradeService.listTrades({ status: 'CANCELLED', size: 50, page: 0 }),
       ]);
 
       setStats({
         totalCards: cardsData.page?.totalElements || 0,
         pendingTrades: tradesData.page?.totalElements || 0,
+        completedTrades: completedData.page?.totalElements || 0,
         username: profileData.username,
       });
       setPendingTrades(tradesData.content || []);
@@ -34,7 +38,14 @@ function useDashboard(userId) {
         id: item.userCardId,
         name: item.cardName,
       })));
-      setActivities([]);
+
+      const allTrades = [
+        ...(completedData.content || []),
+        ...(rejectedData.content || []),
+        ...(cancelledData.content || []),
+      ];
+      allTrades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setActivities(allTrades);
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {

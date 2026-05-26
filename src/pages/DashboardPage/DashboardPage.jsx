@@ -2,43 +2,33 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import useDashboard from '../../hooks/useDashboard';
-import useInventory from '../../hooks/useInventory';
 import MainLayout from '../../components/layout/MainLayout/MainLayout';
 import DashboardStats from '../../components/features/dashboard/DashboardStats/DashboardStats';
-import QuickActions from '../../components/features/dashboard/QuickActions/QuickActions';
 import InventoryPreview from '../../components/features/dashboard/InventoryPreview/InventoryPreview';
 import SetScroller from '../../components/features/dashboard/SetScroller/SetScroller';
-import { ACTIVITY_EVENT_TYPES } from '../../utils/constants';
-import { formatRelativeTime } from '../../utils/formatters';
+import Badge from '../../components/common/Badge/Badge';
+import Placeholder from '../../components/common/Placeholder/Placeholder';
+import { TRADE_STATUS_BADGE_VARIANTS, getImageUrl } from '../../utils/constants';
+import { formatDate } from '../../utils/formatters';
 import styles from './DashboardPage.module.css';
+
+function CardMini({ card }) {
+  const src = getImageUrl(card.imageUrl);
+  return (
+    <div className={styles.feedCardMini}>
+      {src
+        ? <img src={src} alt={card.cardName} className={styles.feedCardMiniImg} />
+        : <Placeholder size="sm" />
+      }
+      <span className={styles.feedCardMiniName}>{card.cardName}</span>
+    </div>
+  );
+}
 
 function DashboardPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { stats, activities, loading, error } = useDashboard(user?.id);
-  const { cards: inventoryCards, loading: inventoryLoading } = useInventory(user?.id);
-
-  const ACTIVITY_LABELS = {
-    [ACTIVITY_EVENT_TYPES.CARD_CREATED]: t('dashboard.activityAddedCard'),
-    [ACTIVITY_EVENT_TYPES.CARD_UPDATED]: t('dashboard.activityUpdatedCard'),
-    [ACTIVITY_EVENT_TYPES.CARD_DELETED]: t('dashboard.activityDeletedCard'),
-    [ACTIVITY_EVENT_TYPES.TRADE_PROPOSED]: t('dashboard.activityProposedTrade'),
-    [ACTIVITY_EVENT_TYPES.TRADE_ACCEPTED]: t('dashboard.activityAcceptedTrade'),
-    [ACTIVITY_EVENT_TYPES.TRADE_REJECTED]: t('dashboard.activityRejectedTrade'),
-    [ACTIVITY_EVENT_TYPES.TRADE_CANCELLED]: t('dashboard.activityCancelledTrade'),
-    [ACTIVITY_EVENT_TYPES.PROFILE_UPDATED]: t('dashboard.activityUpdatedProfile'),
-  };
-
-  const ACTIVITY_ICONS = {
-    [ACTIVITY_EVENT_TYPES.CARD_CREATED]: '➕',
-    [ACTIVITY_EVENT_TYPES.CARD_UPDATED]: '✏️',
-    [ACTIVITY_EVENT_TYPES.CARD_DELETED]: '🗑️',
-    [ACTIVITY_EVENT_TYPES.TRADE_PROPOSED]: '📤',
-    [ACTIVITY_EVENT_TYPES.TRADE_ACCEPTED]: '🤝',
-    [ACTIVITY_EVENT_TYPES.TRADE_REJECTED]: '✖',
-    [ACTIVITY_EVENT_TYPES.TRADE_CANCELLED]: '↩',
-    [ACTIVITY_EVENT_TYPES.PROFILE_UPDATED]: '👤',
-  };
 
   return (
     <MainLayout user={user} onLogout={logout}>
@@ -73,11 +63,9 @@ function DashboardPage() {
           <DashboardStats stats={stats} loading={loading} />
         </div>
 
-        <InventoryPreview cards={inventoryCards} loading={inventoryLoading} />
+        <InventoryPreview />
 
         <div className={styles.lower}>
-          <QuickActions />
-
           <div className={styles.feed}>
             <h2 className={styles.feedTitle}>{t('dashboard.recentActivity')}</h2>
             {loading ? (
@@ -86,18 +74,52 @@ function DashboardPage() {
               <p className={styles.feedEmpty}>{t('dashboard.noRecentActivity')}</p>
             ) : (
               <ul className={styles.feedList}>
-                {activities.map((event, i) => (
-                  <li key={i} className={styles.feedItem}>
-                    <span className={styles.feedIcon}>
-                      {ACTIVITY_ICONS[event.eventType] || '•'}
-                    </span>
-                    <span className={styles.feedEvent}>
-                      {ACTIVITY_LABELS[event.eventType] || event.eventType}
-                      {event.entityName ? `: ${event.entityName}` : ''}
-                    </span>
-                    <span className={styles.feedTime}>{formatRelativeTime(event.createdAt)}</span>
-                  </li>
-                ))}
+                {activities.map((trade) => {
+                  const isProposer = trade.proposerId === user?.id;
+                  const offeredCards = (trade.items || []).filter(i => i.fromUserId === trade.proposerId);
+                  const requestedCards = (trade.items || []).filter(i => i.fromUserId === trade.receiverId);
+                  const myCards = isProposer ? offeredCards : requestedCards;
+                  const theirCards = isProposer ? requestedCards : offeredCards;
+                  const counterpartUsername = isProposer ? trade.receiverUsername : trade.proposerUsername;
+
+                  return (
+                    <li key={trade.id} className={styles.feedItem}>
+                      <div className={styles.feedHeader}>
+                        <div className={styles.feedHeaderLeft}>
+                          <span className={styles.feedDate}>{formatDate(trade.createdAt)}</span>
+                          <span className={styles.feedTradeId}>#{trade.id.slice(-6)}</span>
+                        </div>
+                        <Badge
+                          label={t(`tradeStatuses.${trade.status.toLowerCase()}`)}
+                          variant={TRADE_STATUS_BADGE_VARIANTS[trade.status]}
+                        />
+                      </div>
+
+                      <div className={styles.feedColumns}>
+                        <div className={styles.feedCol}>
+                          <h4 className={styles.feedColTitle}>
+                            {isProposer ? t('trades.youOffer') : `${counterpartUsername} ${t('trades.offers')}`}
+                          </h4>
+                          <div className={styles.feedCardsList}>
+                            {myCards.map(card => (
+                              <CardMini key={card.userCardId} card={card} />
+                            ))}
+                          </div>
+                        </div>
+                        <div className={styles.feedCol}>
+                          <h4 className={styles.feedColTitle}>
+                            {isProposer ? `${counterpartUsername} ${t('trades.offers')}` : t('trades.youOffer')}
+                          </h4>
+                          <div className={styles.feedCardsList}>
+                            {theirCards.map(card => (
+                              <CardMini key={card.userCardId} card={card} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

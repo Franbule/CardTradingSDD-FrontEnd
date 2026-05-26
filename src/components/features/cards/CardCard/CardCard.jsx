@@ -63,7 +63,7 @@ function CardCard({ card, showOwner = false, showQuantity = false,
         )}
       </div>
 
-      {!unowned && <div className={styles.actions}>
+      {!unowned && (onUpdateQuantity || onAddToInventory || onProposeTrade || onEdit || onDelete) && <div className={styles.actions}>
         {showQuantity && onUpdateQuantity && (
           <div className={styles.qtyControls}>
             <button
